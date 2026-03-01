@@ -36,3 +36,4 @@ C:/Webs/CSharp/sistemahoteleria/src/HotelSystem.Infrastructure/obj/Debug/net10.0
 /Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Infrastructure/obj/Debug/net10.0/HotelSystem.Infrastructure.pdb
 /Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Infrastructure/obj/Debug/net10.0/HotelSystem.Infrastructure.genruntimeconfig.cache
 /Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Infrastructure/obj/Debug/net10.0/ref/HotelSystem.Infrastructure.dll
+/Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Infrastructure/obj/Debug/net10.0/HotelSystem.Infrastructure.sourcelink.json

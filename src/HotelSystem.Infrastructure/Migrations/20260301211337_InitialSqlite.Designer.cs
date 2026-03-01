@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HotelSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(HotelDbContext))]
-    [Migration("20260226170859_InitialSqlite")]
+    [Migration("20260301211337_InitialSqlite")]
     partial class InitialSqlite
     {
         /// <inheritdoc />

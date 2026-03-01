@@ -28,3 +28,4 @@ C:/Webs/CSharp/sistemahoteleria/src/HotelSystem.Application/obj/Debug/net10.0/re
 /Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Application/obj/Debug/net10.0/refint/HotelSystem.Application.dll
 /Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Application/obj/Debug/net10.0/HotelSystem.Application.pdb
 /Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Application/obj/Debug/net10.0/ref/HotelSystem.Application.dll
+/Users/cristhian/Desktop/sistemahoteleria/src/HotelSystem.Application/obj/Debug/net10.0/HotelSystem.Application.sourcelink.json
