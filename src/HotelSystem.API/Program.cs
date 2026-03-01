@@ -37,9 +37,8 @@ builder.Services.AddSignalR();
 var app = builder.Build();
 
 // ── Seed Database solo en Development ────────────────────────────────────
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     try
     {
         await DbInitializer.SeedAsync(scope.ServiceProvider);
