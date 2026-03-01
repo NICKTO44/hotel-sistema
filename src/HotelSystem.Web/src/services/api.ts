@@ -230,6 +230,14 @@ export const dashboardService = {
 };
 
 export interface Settings {
+    companyEmail?: string;
+    companyAddress?: string;
+    companyPhone?: string;
+    taxId?: string;
+    defaultCheckInTime?: string;
+    defaultCheckOutTime?: string;
+    maxGuestsPerRoom?: number;
+    enableOnlineBookings?: boolean;
     id: string;
     companyName: string;
     documentNumber: string;

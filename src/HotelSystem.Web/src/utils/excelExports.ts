@@ -58,7 +58,7 @@ export const exportGuestsToExcel = (guests: any[], filename: string = 'guests.xl
     XLSX.writeFile(workbook, filename);
 };
 
-export const exportRevenueToExcel = (revenueData: RevenueChartData[], dateRange: { start: string, end: string }, filename: string = 'revenue_data.xlsx') => {
+export const exportRevenueToExcel = (revenueData: RevenueChartData[], _dateRange: { start: string, end: string }, filename: string = 'revenue_data.xlsx') => {
     const data = revenueData.map(d => ({
         'Date': d.date,
         'Revenue': d.amount

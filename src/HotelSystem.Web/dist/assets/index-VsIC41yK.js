@@ -1,1 +1,0 @@
-var c=(n=>(n[n.Available=0]="Available",n[n.Occupied=1]="Occupied",n[n.Cleaning=2]="Cleaning",n[n.Maintenance=3]="Maintenance",n))(c||{}),d=(n=>(n[n.Pending=0]="Pending",n[n.Confirmed=1]="Confirmed",n[n.CheckedIn=2]="CheckedIn",n[n.CheckedOut=3]="CheckedOut",n[n.Cancelled=4]="Cancelled",n))(d||{});export{c as R,d as a};

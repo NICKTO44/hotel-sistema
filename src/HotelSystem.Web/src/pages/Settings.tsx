@@ -439,10 +439,10 @@ const SettingsPage = () => {
                         <button
                             type="submit"
                             className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                            disabled={updateMutation.isLoading}
+                            disabled={updateMutation.isPending}
                         >
                             <FaSave className="mr-2 -ml-1" />
-                            {updateMutation.isLoading ? (t('common.saving') || 'Saving...') : (t('common.saveChanges') || 'Save Changes')}
+                            {updateMutation.isPending ? (t('common.saving') || 'Saving...') : (t('common.saveChanges') || 'Save Changes')}
                         </button>
                     </div>
                 </div>

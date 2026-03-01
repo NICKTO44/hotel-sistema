@@ -40,7 +40,7 @@ export default function PublicBooking() {
 
   // ── MEDIA #8 CORREGIDA: Solo guardamos preferenceId, NO datos personales ──
   // El preferenceId es suficiente para recuperar la reserva al volver de MP
-  const [pendingPreferenceId, setPendingPreferenceId] = useState<string | null>(null);
+  const [_pendingPreferenceId, setPendingPreferenceId] = useState<string | null>(null);
 
   const [lang, setLang]                         = useState<Lang>('es');
   const [currency, setCurrency]                 = useState('PEN');
