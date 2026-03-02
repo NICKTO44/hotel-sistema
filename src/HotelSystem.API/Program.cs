@@ -88,14 +88,14 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    // Producción: solo dominio real en HTTPS
-    var frontendUrl = builder.Configuration["App:FrontendUrl"]
-        ?? throw new InvalidOperationException("App:FrontendUrl no configurado para producción.");
+    // Producción: leer múltiples orígenes desde CorsOrigins o App:FrontendUrl
+    var prodOrigins = builder.Configuration["CorsOrigins"]?.Split(",", StringSplitOptions.RemoveEmptyEntries)
+        ?? new[] { builder.Configuration["App:FrontendUrl"] ?? "https://hotel-sistema.vercel.app" };
 
     app.UseCors(policy => policy
-        .WithOrigins(frontendUrl)
-        .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH")
-        .WithHeaders("Content-Type", "Authorization")
+        .WithOrigins(prodOrigins)
+        .WithMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+        .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
         .AllowCredentials());
 }
 
