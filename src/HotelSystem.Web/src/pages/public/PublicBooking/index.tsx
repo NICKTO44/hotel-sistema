@@ -39,7 +39,7 @@ export default function PublicBooking() {
   const [paymentUrl, setPaymentUrl]       = useState('');
   const [paymentOpened, setPaymentOpened] = useState(false);
 
-  const [pendingPreferenceId, setPendingPreferenceId] = useState<string | null>(null);
+  const [_pendingPreferenceId, setPendingPreferenceId] = useState<string | null>(null);
 
   const [lang, setLang]                         = useState<Lang>('es');
   const [currency, setCurrency]                 = useState('PEN');
