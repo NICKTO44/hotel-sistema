@@ -4,7 +4,7 @@ import { Room, RoomType, CreateRoomRequest, UpdateRoomRequest, Reservation, Crea
 export { type Room, type RoomType, type CreateRoomRequest, type UpdateRoomRequest, type Reservation, type CreateReservationRequest, type Guest, ReservationStatus, RoomStatus, type CreateRoomTypeRequest, type CreateGuestRequest, type UpdateGuestRequest, type DashboardStats, type DashboardStatsComparison, type StatChanges, type RevenueChartData };
 
 const api = axios.create({
-    baseURL: 'http://localhost:5036/api',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5036/api',
     headers: {
         'Content-Type': 'application/json',
     },
@@ -26,7 +26,6 @@ api.interceptors.response.use(
         if (error.response) {
             const { status, data } = error.response;
 
-            // Token expirado o no autorizado
             if (status === 401) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('role');
@@ -36,17 +35,14 @@ api.interceptors.response.use(
                 return Promise.reject(new Error('Session expired. Please login again.'));
             }
 
-            // Error con mensaje del backend
             if (data && data.message) {
                 return Promise.reject(new Error(data.message));
             }
 
-            // Errores de validación
             if (data && data.errors && data.errors.length > 0) {
                 return Promise.reject(new Error(data.errors.join(', ')));
             }
 
-            // Errores genéricos por status
             const errorMessages: Record<number, string> = {
                 400: 'Invalid request. Please check the data.',
                 403: 'You do not have permission to perform this action.',
@@ -57,7 +53,6 @@ api.interceptors.response.use(
             return Promise.reject(new Error(errorMessages[status] || 'An unexpected error occurred.'));
         }
 
-        // Sin conexión al backend
         if (error.request) {
             return Promise.reject(new Error('Cannot connect to server. Please check your connection.'));
         }
@@ -230,14 +225,6 @@ export const dashboardService = {
 };
 
 export interface Settings {
-    companyEmail?: string;
-    companyAddress?: string;
-    companyPhone?: string;
-    taxId?: string;
-    defaultCheckInTime?: string;
-    defaultCheckOutTime?: string;
-    maxGuestsPerRoom?: number;
-    enableOnlineBookings?: boolean;
     id: string;
     companyName: string;
     documentNumber: string;

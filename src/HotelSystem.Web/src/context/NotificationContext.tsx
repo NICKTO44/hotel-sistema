@@ -14,6 +14,8 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
+const BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5036/api').replace('/api', '');
+
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -21,13 +23,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
-        // Initial fetch
         fetchNotifications();
         fetchUnreadCount();
 
-        // Setup SignalR Bundle
         const newConnection = new signalR.HubConnectionBuilder()
-            .withUrl("http://localhost:5036/hubs/notifications") // Adjust URL if needed
+            .withUrl(`${BASE_URL}/hubs/notifications`)
             .withAutomaticReconnect()
             .build();
 
@@ -40,67 +40,43 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
                 .then(() => {
                     console.log('SignalR Connected!');
                     setIsConnected(true);
-
                     connection.on('ReceiveNotification', (notification: any) => {
-                        // Optimistically add to list
                         const newNotification: Notification = {
-                            id: crypto.randomUUID(), // Temp ID until refresh
+                            id: crypto.randomUUID(),
                             title: notification.title,
                             message: notification.message,
                             type: notification.type,
                             isRead: false,
                             createdAt: new Date().toISOString()
                         };
-
                         setNotifications(prev => [newNotification, ...prev]);
                         setUnreadCount(prev => prev + 1);
-
-                        // Show Toast
-                        toast(notification.message, {
-                            icon: getIconForType(notification.type),
-                            duration: 4000
-                        });
+                        toast(notification.message, { icon: getIconForType(notification.type), duration: 4000 });
                     });
                 })
                 .catch(e => console.log('Connection failed: ', e));
         }
-
         return () => {
-            if (connection) {
-                connection.off('ReceiveNotification');
-                connection.stop();
-            }
+            if (connection) { connection.off('ReceiveNotification'); connection.stop(); }
         };
     }, [connection]);
 
     const fetchNotifications = async () => {
-        try {
-            const data = await notificationService.getAll();
-            setNotifications(data);
-        } catch (error) {
-            console.error("Failed to fetch notifications", error);
-        }
+        try { const data = await notificationService.getAll(); setNotifications(data); }
+        catch (error) { console.error("Failed to fetch notifications", error); }
     };
 
     const fetchUnreadCount = async () => {
-        try {
-            const data = await notificationService.getUnreadCount();
-            setUnreadCount(data.count);
-        } catch (error) {
-            console.error("Failed to fetch unread count", error);
-        }
+        try { const data = await notificationService.getUnreadCount(); setUnreadCount(data.count); }
+        catch (error) { console.error("Failed to fetch unread count", error); }
     };
 
     const markAsRead = async (id: string) => {
         try {
             await notificationService.markAsRead(id);
-            setNotifications(prev =>
-                prev.map(n => n.id === id ? { ...n, isRead: true } : n)
-            );
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
             setUnreadCount(prev => Math.max(0, prev - 1));
-        } catch (error) {
-            console.error("Failed to mark as read", error);
-        }
+        } catch (error) { console.error("Failed to mark as read", error); }
     };
 
     const markAllAsRead = async () => {
@@ -108,9 +84,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
             await notificationService.markAllAsRead();
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
-        } catch (error) {
-            console.error("Failed to mark all as read", error);
-        }
+        } catch (error) { console.error("Failed to mark all as read", error); }
     };
 
     const getIconForType = (type: string) => {
@@ -123,14 +97,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     };
 
     return (
-        <NotificationContext.Provider value={{
-            notifications,
-            unreadCount,
-            isConnected,
-            markAsRead,
-            markAllAsRead,
-            fetchNotifications
-        }}>
+        <NotificationContext.Provider value={{ notifications, unreadCount, isConnected, markAsRead, markAllAsRead, fetchNotifications }}>
             {children}
         </NotificationContext.Provider>
     );
@@ -138,8 +105,6 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
 export const useNotifications = () => {
     const context = useContext(NotificationContext);
-    if (!context) {
-        throw new Error('useNotifications must be used within a NotificationProvider');
-    }
+    if (!context) throw new Error('useNotifications must be used within a NotificationProvider');
     return context;
 };

@@ -9,7 +9,8 @@ import PaymentStep from './components/PaymentStep';
 import BookingSidebar from './components/BookingSidebar';
 import Confirmation from './components/Confirmation';
 
-const API_BASE = 'http://localhost:5036/api/public';
+const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5036/api') + '/public';
+const API_URL  = import.meta.env.VITE_API_URL || 'http://localhost:5036/api';
 
 const today    = new Date().toISOString().split('T')[0];
 const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
@@ -38,9 +39,7 @@ export default function PublicBooking() {
   const [paymentUrl, setPaymentUrl]       = useState('');
   const [paymentOpened, setPaymentOpened] = useState(false);
 
-  // ── MEDIA #8 CORREGIDA: Solo guardamos preferenceId, NO datos personales ──
-  // El preferenceId es suficiente para recuperar la reserva al volver de MP
-  const [_pendingPreferenceId, setPendingPreferenceId] = useState<string | null>(null);
+  const [pendingPreferenceId, setPendingPreferenceId] = useState<string | null>(null);
 
   const [lang, setLang]                         = useState<Lang>('es');
   const [currency, setCurrency]                 = useState('PEN');
@@ -50,7 +49,6 @@ export default function PublicBooking() {
 
   const t = T[lang];
 
-  // Cargar tasas de cambio
   useEffect(() => {
     setRatesLoading(true);
     fetch('https://open.er-api.com/v6/latest/PEN')
@@ -60,14 +58,11 @@ export default function PublicBooking() {
       .finally(() => setRatesLoading(false));
   }, []);
 
-  // ── MEDIA #8: Detectar retorno de MP usando solo el preferenceId ──
-  // Los datos del booking se mantienen en estado React (memoria), NO en sessionStorage
   useEffect(() => {
     const params  = new URLSearchParams(window.location.search);
     const payment = params.get('payment');
     if (payment !== 'success') return;
 
-    // ── MEDIA #8: Recuperar solo el preferenceId del sessionStorage ──
     const savedPreferenceId = sessionStorage.getItem('pendingPreferenceId');
     const savedBooking      = sessionStorage.getItem('pendingBookingState');
 
@@ -105,7 +100,6 @@ export default function PublicBooking() {
     window.history.replaceState({}, '', '/booking');
   }, []);
 
-  // Helpers
   const convert = (pen: number): string => {
     const cur = CURRENCIES.find(c => c.code === currency)!;
     if (!rates[currency] || currency === 'PEN') return `${cur.symbol} ${pen.toFixed(2)}`;
@@ -119,7 +113,6 @@ export default function PublicBooking() {
   const selectedCur = CURRENCIES.find(c => c.code === currency)!;
   const fmtDate     = (d: string) => formatDate(d, lang);
 
-  // ── Handlers ──
   const searchRooms = async () => {
     if (!checkIn || !checkOut || checkIn >= checkOut) { setError(t.validDates); return; }
     setLoading(true); setError('');
@@ -146,7 +139,6 @@ export default function PublicBooking() {
       setError(t.fillRequired); return;
     }
 
-    // Validación básica de email en el frontend
     if (!guest.email.includes('@')) {
       setError('Email inválido.'); return;
     }
@@ -154,7 +146,7 @@ export default function PublicBooking() {
     setSubmitting(true); setError('');
     try {
       const nightCnt = nights(checkIn, checkOut);
-      const res = await fetch('http://localhost:5036/api/payment/create-preference', {
+      const res = await fetch(`${API_URL}/payment/create-preference`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,13 +172,7 @@ export default function PublicBooking() {
 
       setPaymentUrl(data.sandboxInitPoint || data.initPoint);
 
-      // ── MEDIA #8 CORREGIDA: Solo guardar preferenceId en sessionStorage ──
-      // Los datos personales NO se guardan en sessionStorage
-      // Se guardan temporalmente en estado React para usarlos si el usuario
-      // vuelve y confirma manualmente
       sessionStorage.setItem('pendingPreferenceId', data.preferenceId);
-      // Solo guardamos el estado para el caso de retorno desde MP
-      // Nota: en producción considerar cifrar esto o usar el webhook exclusivamente
       sessionStorage.setItem('pendingBookingState', JSON.stringify(booking));
 
       setStep(35);
@@ -220,7 +206,6 @@ export default function PublicBooking() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      // Limpiar sessionStorage al confirmar exitosamente
       sessionStorage.removeItem('pendingPreferenceId');
       sessionStorage.removeItem('pendingBookingState');
 
@@ -241,12 +226,10 @@ export default function PublicBooking() {
     setPaymentOpened(false);
     setPaymentUrl('');
     setPendingPreferenceId(null);
-    // Limpiar sessionStorage al resetear
     sessionStorage.removeItem('pendingPreferenceId');
     sessionStorage.removeItem('pendingBookingState');
   };
 
-  // ── Render ──
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
 
