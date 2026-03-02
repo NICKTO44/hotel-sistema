@@ -85,10 +85,31 @@ export default function PublicBooking() {
       body: JSON.stringify({ preferenceId }),
     })
       .then(r => r.json())
-      .then(data => { setConfirmation(data); setStep(4); })
+      .then(data => {
+        // Notificar a la pestaña original
+        localStorage.setItem('payment_confirmed', JSON.stringify({ data, timestamp: Date.now() }));
+        setConfirmation(data);
+        setStep(4);
+      })
       .catch(() => setError('Error al confirmar la reserva'));
 
     window.history.replaceState({}, '', '/booking');
+  }, []);
+
+  // Escuchar confirmación de pago desde pestaña de MP
+  useEffect(() => {
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === 'payment_confirmed' && e.newValue) {
+        try {
+          const { data } = JSON.parse(e.newValue);
+          localStorage.removeItem('payment_confirmed');
+          setConfirmation(data);
+          setStep(4);
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageEvent);
+    return () => window.removeEventListener('storage', handleStorageEvent);
   }, []);
 
   const convert = (pen: number): string => {
@@ -161,7 +182,8 @@ export default function PublicBooking() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      setPaymentUrl(data.sandboxInitPoint || data.initPoint);
+      const url = data.sandboxInitPoint || data.initPoint;
+      setPaymentUrl(url);
 
       sessionStorage.setItem('pendingPreferenceId', data.preferenceId);
       sessionStorage.setItem('pendingBookingState', JSON.stringify(booking));
