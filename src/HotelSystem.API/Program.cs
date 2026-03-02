@@ -1,10 +1,9 @@
 using HotelSystem.Application;
-using Npgsql;
+using HotelSystem.Infrastructure;
+using HotelSystem.Infrastructure.Persistence;
 
 // Fix PostgreSQL DateTime UTC requirement
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-using HotelSystem.Infrastructure;
-using HotelSystem.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
