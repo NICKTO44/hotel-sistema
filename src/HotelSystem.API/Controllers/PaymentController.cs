@@ -364,10 +364,7 @@ namespace HotelSystem.API.Controllers
     public string PreferenceId { get; set; } = "";
 }
 
-public class ConfirmByPreferenceRequest
-{
-    public string PreferenceId { get; set; } = "";
-}
+
 
 public class CreatePreferenceRequest
     {
