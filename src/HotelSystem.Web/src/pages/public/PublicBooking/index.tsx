@@ -89,41 +89,6 @@ export default function PublicBooking() {
       .catch(() => setError('Error al confirmar la reserva'));
 
     window.history.replaceState({}, '', '/booking');
-    return;
-
-    // DEAD CODE - kept for reference
-    if (false) {
-
-    sessionStorage.removeItem('pendingPreferenceId');
-    sessionStorage.removeItem('pendingBookingState');
-
-    const pendingBooking = JSON.parse(savedBooking);
-    setBooking(pendingBooking);
-
-    const { guest, room, checkIn, checkOut } = pendingBooking;
-    fetch(`${API_BASE}/booking`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        roomId:       room.id,
-        checkInDate:  new Date(checkIn).toISOString(),
-        checkOutDate: new Date(checkOut).toISOString(),
-        adults: 1, children: 0, notes: guest.notes,
-        guest: {
-          firstName:            guest.firstName,
-          lastName:             guest.lastName,
-          email:                guest.email,
-          phone:                guest.phone,
-          identificationNumber: guest.identificationNumber,
-          nationality:          guest.nationality,
-        },
-      }),
-    })
-      .then(r => r.json())
-      .then(data => { setConfirmation(data); setStep(4); })
-      .catch(() => setError('Error al confirmar la reserva'));
-
-    window.history.replaceState({}, '', '/booking');
   }, []);
 
   const convert = (pen: number): string => {
