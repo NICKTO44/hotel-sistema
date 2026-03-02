@@ -139,6 +139,74 @@ namespace HotelSystem.API.Controllers
             }
         }
 
+
+        [HttpPost("confirm-by-preference")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmByPreference([FromBody] ConfirmByPreferenceRequest request)
+        {
+            try
+            {
+                MercadoPagoConfig.AccessToken = GetAccessToken();
+                var client = new PreferenceClient();
+                var preference = await client.GetAsync(request.PreferenceId);
+
+                if (preference == null)
+                    return BadRequest(new { message = "Preferencia no encontrada." });
+
+                var meta = preference.Metadata;
+                if (meta == null)
+                    return BadRequest(new { message = "Metadata vacía." });
+
+                string GetMeta(string key) =>
+                    meta.ContainsKey(key) ? meta[key]?.ToString() ?? "" : "";
+
+                var roomIdStr   = GetMeta("room_id");
+                var checkInStr  = GetMeta("check_in");
+                var checkOutStr = GetMeta("check_out");
+                var firstName   = GetMeta("guest_first_name");
+                var lastName    = GetMeta("guest_last_name");
+                var email       = GetMeta("guest_email");
+                var phone       = GetMeta("guest_phone");
+                var idNumber    = GetMeta("guest_id_number");
+                var nationality = GetMeta("guest_nationality");
+                var notes       = GetMeta("notes");
+
+                if (!Guid.TryParse(roomIdStr, out var roomId))
+                    return BadRequest(new { message = "room_id inválido." });
+
+                if (!DateTime.TryParse(checkInStr, out var checkIn) ||
+                    !DateTime.TryParse(checkOutStr, out var checkOut))
+                    return BadRequest(new { message = "Fechas inválidas." });
+
+                var command = new CreateReservationCommand
+                {
+                    RoomId       = roomId,
+                    CheckInDate  = checkIn,
+                    CheckOutDate = checkOut,
+                    Adults       = 1,
+                    Children     = 0,
+                    Notes        = notes,
+                    Guest        = new GuestDto
+                    {
+                        FirstName            = firstName,
+                        LastName             = lastName,
+                        Email                = email,
+                        Phone                = phone,
+                        IdentificationNumber = idNumber,
+                        Nationality          = nationality,
+                    }
+                };
+
+                var result = await _mediator.Send(command);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Error confirmando por preferencia: {Message}", ex.Message);
+                return BadRequest(new { message = "Error al confirmar reserva." });
+            }
+        }
+
         [HttpPost("webhook")]
         [AllowAnonymous]
         public async Task<IActionResult> Webhook([FromQuery] string? type, [FromQuery] string? data_id)
@@ -291,7 +359,17 @@ namespace HotelSystem.API.Controllers
         }
     }
 
-    public class CreatePreferenceRequest
+    public class ConfirmByPreferenceRequest
+{
+    public string PreferenceId { get; set; } = "";
+}
+
+public class ConfirmByPreferenceRequest
+{
+    public string PreferenceId { get; set; } = "";
+}
+
+public class CreatePreferenceRequest
     {
         public string  RoomId           { get; set; } = "";
         public string  RoomNumber       { get; set; } = "";

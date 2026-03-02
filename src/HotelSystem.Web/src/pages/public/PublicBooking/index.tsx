@@ -66,7 +66,33 @@ export default function PublicBooking() {
     const savedPreferenceId = sessionStorage.getItem('pendingPreferenceId');
     const savedBooking      = sessionStorage.getItem('pendingBookingState');
 
-    if (!savedPreferenceId || !savedBooking) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const preferenceId = urlParams.get('preference_id') || savedPreferenceId;
+
+    if (!preferenceId) return;
+
+    sessionStorage.removeItem('pendingPreferenceId');
+    sessionStorage.removeItem('pendingBookingState');
+
+    if (savedBooking) {
+      const pendingBooking = JSON.parse(savedBooking);
+      setBooking(pendingBooking);
+    }
+
+    fetch(`${API_URL}/payment/confirm-by-preference`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ preferenceId }),
+    })
+      .then(r => r.json())
+      .then(data => { setConfirmation(data); setStep(4); })
+      .catch(() => setError('Error al confirmar la reserva'));
+
+    window.history.replaceState({}, '', '/booking');
+    return;
+
+    // DEAD CODE - kept for reference
+    if (false) {
 
     sessionStorage.removeItem('pendingPreferenceId');
     sessionStorage.removeItem('pendingBookingState');
