@@ -182,7 +182,7 @@ export default function PublicBooking() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      const url = data.sandboxInitPoint || data.initPoint;
+      const url = data.initPoint;
       setPaymentUrl(url);
 
       sessionStorage.setItem('pendingPreferenceId', data.preferenceId);
