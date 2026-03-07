@@ -1,8 +1,16 @@
-import { FaBed, FaUsers, FaMapMarkerAlt, FaArrowRight } from 'react-icons/fa';
-import { Room } from '../types';
-import { ROOM_IMAGES, TDict } from '../constants';
+import { useState } from 'react';
+import { FaArrowLeft, FaArrowRight, FaUsers, FaMapMarkerAlt, FaBed, FaWifi, FaTv, FaSnowflake, FaShower, FaCoffee, FaParking } from 'react-icons/fa';
 
-interface Props {
+interface Room {
+  id: string;
+  number: string;
+  floor: number;
+  roomTypeName: string;
+  pricePerNight: number;
+  capacity: number;
+}
+
+interface RoomListProps {
   rooms: Room[];
   checkIn: string;
   checkOut: string;
@@ -13,137 +21,240 @@ interface Props {
   currency: string;
   selectedCurName: string;
   rates: Record<string, number>;
-  t: TDict;
+  t: any;
 }
 
-const nights = (ci: string, co: string) =>
-  Math.max(1, Math.round((new Date(co).getTime() - new Date(ci).getTime()) / 86400000));
+// Descripciones y amenidades por tipo de habitación
+const ROOM_TYPE_INFO: Record<string, { description: string; amenities: string[] }> = {
+  Standard: {
+    description: 'Habitación confortable con todo lo esencial para una estadía perfecta.',
+    amenities: ['WiFi', 'TV', 'AC', 'Baño privado'],
+  },
+  Deluxe: {
+    description: 'Espaciosa y elegante, con vista privilegiada y acabados premium.',
+    amenities: ['WiFi', 'TV', 'AC', 'Baño privado', 'Café'],
+  },
+  Suite: {
+    description: 'Experiencia de lujo con sala de estar, minibar y vistas panorámicas.',
+    amenities: ['WiFi', 'TV', 'AC', 'Baño privado', 'Café', 'Parking'],
+  },
+  Junior: {
+    description: 'Diseño moderno con área de trabajo y amenidades de confort.',
+    amenities: ['WiFi', 'TV', 'AC', 'Baño privado'],
+  },
+};
 
-export default function RoomList({
-  rooms, checkIn, checkOut, convert, onSelect, onChangeDates, currency, selectedCurName, rates, t
-}: Props) {
+const AMENITY_ICONS: Record<string, JSX.Element> = {
+  'WiFi':         <FaWifi />,
+  'TV':           <FaTv />,
+  'AC':           <FaSnowflake />,
+  'Baño privado': <FaShower />,
+  'Café':         <FaCoffee />,
+  'Parking':      <FaParking />,
+};
+
+// Imagen por tipo de habitación (usa las imágenes del proyecto)
+const ROOM_IMAGES: Record<string, string> = {
+  Standard: '/images/habitaciones/habitacion1.jpeg',
+  Deluxe:   '/images/habitaciones/habitacion3.webp',
+  Suite:    '/images/habitaciones/habitacion5.jpg',
+  Junior:   '/images/habitaciones/habitacion7.webp',
+};
+
+const DEFAULT_IMAGE = '/images/habitaciones/habitacion2.webp';
+
+const formatDate = (d: string) =>
+  new Date(d).toLocaleDateString('es-PE', { day: 'numeric', month: 'short', year: 'numeric' });
+
+function getRoomInfo(typeName: string) {
+  const key = Object.keys(ROOM_TYPE_INFO).find(k =>
+    typeName.toLowerCase().includes(k.toLowerCase())
+  );
+  return key
+    ? ROOM_TYPE_INFO[key]
+    : { description: 'Habitación cómoda y bien equipada para tu estadía.', amenities: ['WiFi', 'TV', 'AC', 'Baño privado'] };
+}
+
+function getRoomImage(typeName: string) {
+  const key = Object.keys(ROOM_IMAGES).find(k =>
+    typeName.toLowerCase().includes(k.toLowerCase())
+  );
+  return key ? ROOM_IMAGES[key] : DEFAULT_IMAGE;
+}
+
+const RoomList = ({
+  rooms, checkIn, checkOut, nightCount, convert, onSelect, onChangeDates, t
+}: RoomListProps) => {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   return (
-    <div>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap');
-        .room-card { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
-        .room-card:hover { transform: translateY(-3px); }
-        .room-img { transition: transform 0.6s cubic-bezier(0.4,0,0.2,1); }
-        .room-card:hover .room-img { transform: scale(1.06); }
-        .select-btn {
-          background: linear-gradient(135deg, #059669 0%, #047857 100%);
-          box-shadow: 0 4px 15px rgba(5,150,105,0.35);
-          transition: all 0.2s ease;
-        }
-        .select-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(5,150,105,0.45); }
-        .room-number-badge {
-          background: rgba(0,0,0,0.7);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(255,255,255,0.15);
-        }
-      `}</style>
+    <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
 
-      <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <button
+          onClick={onChangeDates}
+          className="text-neutral-400 hover:text-neutral-700 p-2 rounded-xl hover:bg-white transition-all border border-transparent hover:border-neutral-200 hover:shadow-sm"
+        >
+          <FaArrowLeft className="text-sm" />
+        </button>
         <div>
-          <h2 className="text-xl font-bold text-gray-900" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+          <h2 className="text-xl font-bold text-neutral-900">
             {t.availableRooms(rooms.length)}
           </h2>
-          {currency !== 'PEN' && Object.keys(rates).length > 0 && (
-            <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full inline-block"></span>
-              {t.priceRealtime(selectedCurName)}
-            </p>
-          )}
+          <p className="text-sm text-neutral-400 mt-0.5">
+            {formatDate(checkIn)} → {formatDate(checkOut)} ·{' '}
+            <span className="font-medium text-neutral-500">
+              {nightCount} {nightCount === 1 ? t.night : t.nights}
+            </span>
+          </p>
         </div>
       </div>
 
+      {/* Sin resultados */}
       {rooms.length === 0 ? (
-        <div className="bg-white border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center">
-          <div className="h-20 w-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <FaBed className="text-gray-300 text-3xl" />
+        <div className="bg-white border border-neutral-100 rounded-2xl p-14 text-center shadow-sm">
+          <div className="w-16 h-16 bg-neutral-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FaBed className="text-neutral-300 text-2xl" />
           </div>
-          <p className="font-bold text-gray-700 text-lg mb-2">{t.noRooms}</p>
-          <p className="text-sm text-gray-400 mb-6">{t.noRoomsSub}</p>
+          <p className="font-semibold text-neutral-700">{t.noRooms}</p>
+          <p className="text-sm text-neutral-400 mt-1">{t.noRoomsSub}</p>
           <button
             onClick={onChangeDates}
-            className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-6 py-2.5 rounded-xl transition-colors border border-emerald-200"
+            className="mt-5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-xl transition-colors"
           >
             {t.changeDates}
           </button>
         </div>
       ) : (
-        <div className="space-y-5">
-          {rooms.map((room, idx) => (
-            <div
-              key={room.id}
-              className="room-card bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl border border-gray-100 hover:border-emerald-100"
-            >
-              <div className="flex flex-col md:flex-row">
-                {/* Imagen */}
-                <div className="md:w-72 h-56 md:h-auto flex-shrink-0 relative overflow-hidden bg-gray-100">
-                  <img
-                    src={ROOM_IMAGES[idx % ROOM_IMAGES.length]}
-                    alt={room.roomTypeName}
-                    className="room-img w-full h-full object-cover"
-                    onError={e => {
-                      const el = e.target as HTMLImageElement;
-                      el.style.display = 'none';
-                      if (el.parentElement) {
-                        el.parentElement.className = 'md:w-72 h-56 md:h-full flex-shrink-0 bg-gradient-to-br from-emerald-50 to-teal-100 flex flex-col items-center justify-center gap-2 text-emerald-300';
-                        el.parentElement.innerHTML = `<svg xmlns='http://www.w3.org/2000/svg' class='h-12 w-12' fill='currentColor' viewBox='0 0 20 20'><path d='M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z'/></svg>`;
-                      }
-                    }}
-                  />
-                  {/* Badge habitación */}
-                  <div className="absolute top-3 left-3 room-number-badge text-white text-xs font-bold px-3 py-1.5 rounded-xl">
-                    {t.hab} {room.number}
-                  </div>
-                  {/* Degradado inferior */}
-                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/40 to-transparent md:hidden" />
-                </div>
+        <div className="space-y-4">
+          {rooms.map((room) => {
+            const info  = getRoomInfo(room.roomTypeName);
+            const img   = getRoomImage(room.roomTypeName);
+            const isHov = hoveredId === room.id;
 
-                {/* Contenido */}
-                <div className="flex-1 p-6 flex flex-col justify-between" style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  <div>
-                    <h3
-                      className="text-xl font-bold text-gray-900 mb-4 capitalize"
-                      style={{ fontFamily: "'Playfair Display', serif" }}
+            return (
+              <div
+                key={room.id}
+                onMouseEnter={() => setHoveredId(room.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                className="bg-white rounded-2xl overflow-hidden transition-all duration-300"
+                style={{
+                  border: isHov ? '1.5px solid #10b981' : '1.5px solid #f0f0f0',
+                  boxShadow: isHov
+                    ? '0 8px 32px rgba(16,185,129,0.10), 0 2px 8px rgba(0,0,0,0.04)'
+                    : '0 2px 8px rgba(0,0,0,0.04)',
+                  transform: isHov ? 'translateY(-2px)' : 'none',
+                }}
+              >
+                <div className="flex flex-col sm:flex-row">
+
+                  {/* Imagen */}
+                  <div className="relative sm:w-44 h-44 sm:h-auto flex-shrink-0 overflow-hidden">
+                    <img
+                      src={img}
+                      alt={room.roomTypeName}
+                      className="w-full h-full object-cover transition-transform duration-500"
+                      style={{ transform: isHov ? 'scale(1.06)' : 'scale(1)' }}
+                      onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                    />
+                    {/* Badge habitación */}
+                    <div
+                      className="absolute top-3 left-3 text-white text-xs font-bold px-2.5 py-1 rounded-lg"
+                      style={{ background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(6px)' }}
                     >
-                      {room.roomTypeName}
-                    </h3>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-100">
-                        <FaUsers className="text-emerald-500" /> {room.capacity} {t.people}
-                      </span>
-                      <span className="flex items-center gap-2 bg-gray-50 text-gray-600 text-xs font-semibold px-3 py-2 rounded-xl border border-gray-100">
-                        <FaMapMarkerAlt className="text-emerald-500" /> {t.floor} {room.floor}
-                      </span>
+                      {t.hab} {room.number}
                     </div>
                   </div>
 
-                  <div className="flex items-end justify-between mt-6 pt-5 border-t border-gray-100">
+                  {/* Contenido */}
+                  <div className="flex-1 p-5 flex flex-col justify-between">
                     <div>
-                      <p className="text-3xl font-black text-gray-900">{convert(room.pricePerNight)}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {t.perNight} ·{' '}
-                        <span className="text-gray-700 font-semibold">
-                          {t.total} {convert(room.pricePerNight * nights(checkIn, checkOut))}
-                        </span>
+                      {/* Tipo y meta */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <h3 className="font-bold text-neutral-900 text-base leading-tight">
+                            {room.roomTypeName}
+                          </h3>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-neutral-400">
+                            <span className="flex items-center gap-1">
+                              <FaUsers className="text-emerald-400" />
+                              {room.capacity} {t.people}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <FaMapMarkerAlt className="text-emerald-400" />
+                              {t.floor} {room.floor}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Precio */}
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xl font-black text-neutral-900 leading-none">
+                            {convert(room.pricePerNight)}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-0.5">{t.perNight}</p>
+                        </div>
+                      </div>
+
+                      {/* Descripción */}
+                      <p className="text-xs text-neutral-500 leading-relaxed mb-3">
+                        {info.description}
                       </p>
+
+                      {/* Amenidades */}
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {info.amenities.map(amenity => (
+                          <span
+                            key={amenity}
+                            className="flex items-center gap-1 text-xs text-neutral-500 bg-neutral-50 border border-neutral-100 px-2.5 py-1 rounded-lg font-medium"
+                          >
+                            <span className="text-emerald-500 text-xs">
+                              {AMENITY_ICONS[amenity] || null}
+                            </span>
+                            {amenity}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => onSelect(room)}
-                      className="select-btn flex items-center gap-2 text-white text-sm font-bold px-7 py-3.5 rounded-xl"
-                    >
-                      {t.select} <FaArrowRight className="text-xs" />
-                    </button>
+
+                    {/* Footer: total + botón */}
+                    <div className="flex items-center justify-between pt-3 border-t border-neutral-50">
+                      <div>
+                        <span className="text-xs text-neutral-400">{t.total} </span>
+                        <span className="text-sm font-bold text-neutral-700">
+                          {convert(room.pricePerNight * nightCount)}
+                        </span>
+                        <span className="text-xs text-neutral-400">
+                          {' '}· {nightCount} {nightCount === 1 ? t.night : t.nights}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => onSelect(room)}
+                        className="flex items-center gap-2 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all duration-200 hover:gap-3"
+                        style={{
+                          background: isHov
+                            ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                            : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                          boxShadow: isHov
+                            ? '0 4px 14px rgba(5,150,105,0.45)'
+                            : '0 2px 8px rgba(16,185,129,0.25)',
+                        }}
+                      >
+                        {t.select}
+                        <FaArrowRight className="text-xs transition-transform" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
   );
-}
+};
+
+export default RoomList;
