@@ -34,12 +34,9 @@ export default function PublicBooking() {
     checkIn: today, checkOut: tomorrow, room: null,
     guest: { firstName: '', lastName: '', email: '', phone: '', nationality: '', identificationNumber: '', notes: '' },
   });
-  const [confirmation, setConfirmation]   = useState<any>(null);
-  const [submitting, setSubmitting]       = useState(false);
-  const [paymentUrl, setPaymentUrl]       = useState('');
-  const [paymentOpened, setPaymentOpened] = useState(false);
-
-  const [_pendingPreferenceId, setPendingPreferenceId] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<any>(null);
+  const [submitting, setSubmitting]     = useState(false);
+  const [paymentUrl, setPaymentUrl]     = useState('');
 
   const [lang, setLang]                         = useState<Lang>('es');
   const [currency, setCurrency]                 = useState('PEN');
@@ -59,15 +56,13 @@ export default function PublicBooking() {
   }, []);
 
   useEffect(() => {
-    const params  = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(window.location.search);
     const payment = params.get('payment');
     if (payment !== 'success') return;
 
     const savedPreferenceId = sessionStorage.getItem('pendingPreferenceId');
     const savedBooking      = sessionStorage.getItem('pendingBookingState');
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const preferenceId = urlParams.get('preference_id') || savedPreferenceId;
+    const preferenceId      = params.get('preference_id') || savedPreferenceId;
 
     if (!preferenceId) return;
 
@@ -75,8 +70,7 @@ export default function PublicBooking() {
     sessionStorage.removeItem('pendingBookingState');
 
     if (savedBooking) {
-      const pendingBooking = JSON.parse(savedBooking);
-      setBooking(pendingBooking);
+      setBooking(JSON.parse(savedBooking));
     }
 
     fetch(`${API_URL}/payment/confirm-by-preference`, {
@@ -86,7 +80,6 @@ export default function PublicBooking() {
     })
       .then(r => r.json())
       .then(data => {
-        // Notificar a la pestaña original
         localStorage.setItem('payment_confirmed', JSON.stringify({ data, timestamp: Date.now() }));
         setConfirmation(data);
         setStep(4);
@@ -96,7 +89,6 @@ export default function PublicBooking() {
     window.history.replaceState({}, '', '/booking');
   }, []);
 
-  // Escuchar confirmación de pago desde pestaña de MP
   useEffect(() => {
     const handleStorageEvent = (e: StorageEvent) => {
       if (e.key === 'payment_confirmed' && e.newValue) {
@@ -150,10 +142,7 @@ export default function PublicBooking() {
     if (!guest.firstName || !guest.lastName || !guest.email || !guest.phone || !guest.nationality || !guest.identificationNumber) {
       setError(t.fillRequired); return;
     }
-
-    if (!guest.email.includes('@')) {
-      setError('Email inválido.'); return;
-    }
+    if (!guest.email.includes('@')) { setError('Email inválido.'); return; }
 
     setSubmitting(true); setError('');
     try {
@@ -162,68 +151,29 @@ export default function PublicBooking() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          roomId:          room!.id,
-          roomNumber:      room!.number,
-          roomTypeName:    room!.roomTypeName,
-          checkIn,
-          checkOut,
-          nights:          nightCnt,
-          totalPrice:      room!.pricePerNight * nightCnt,
-          guestFirstName:  guest.firstName,
-          guestLastName:   guest.lastName,
-          guestEmail:      guest.email,
-          guestPhone:      guest.phone,
-          guestIdNumber:   guest.identificationNumber,
-          guestNationality:guest.nationality,
-          notes:           guest.notes,
-          frontendUrl:     window.location.origin,
+          roomId:           room!.id,
+          roomNumber:       room!.number,
+          roomTypeName:     room!.roomTypeName,
+          checkIn, checkOut,
+          nights:           nightCnt,
+          totalPrice:       room!.pricePerNight * nightCnt,
+          guestFirstName:   guest.firstName,
+          guestLastName:    guest.lastName,
+          guestEmail:       guest.email,
+          guestPhone:       guest.phone,
+          guestIdNumber:    guest.identificationNumber,
+          guestNationality: guest.nationality,
+          notes:            guest.notes,
+          frontendUrl:      window.location.origin,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      const url = data.initPoint;
-      setPaymentUrl(url);
-
+      setPaymentUrl(data.initPoint);
       sessionStorage.setItem('pendingPreferenceId', data.preferenceId);
       sessionStorage.setItem('pendingBookingState', JSON.stringify(booking));
-
       setStep(35);
-    } catch (e: any) {
-      setError(e.message || t.errorBooking);
-    } finally { setSubmitting(false); }
-  };
-
-  const confirmBookingAfterPayment = async () => {
-    const { guest, room, checkIn, checkOut } = booking;
-    setSubmitting(true); setError('');
-    try {
-      const res = await fetch(`${API_BASE}/booking`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          roomId:       room!.id,
-          checkInDate:  new Date(checkIn).toISOString(),
-          checkOutDate: new Date(checkOut).toISOString(),
-          adults: 1, children: 0, notes: guest.notes,
-          guest: {
-            firstName:            guest.firstName,
-            lastName:             guest.lastName,
-            email:                guest.email,
-            phone:                guest.phone,
-            identificationNumber: guest.identificationNumber,
-            nationality:          guest.nationality,
-          },
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message);
-
-      sessionStorage.removeItem('pendingPreferenceId');
-      sessionStorage.removeItem('pendingBookingState');
-
-      setConfirmation(data);
-      setStep(4);
     } catch (e: any) {
       setError(e.message || t.errorBooking);
     } finally { setSubmitting(false); }
@@ -236,9 +186,7 @@ export default function PublicBooking() {
       guest: { firstName: '', lastName: '', email: '', phone: '', nationality: '', identificationNumber: '', notes: '' },
     });
     setConfirmation(null);
-    setPaymentOpened(false);
     setPaymentUrl('');
-    setPendingPreferenceId(null);
     sessionStorage.removeItem('pendingPreferenceId');
     sessionStorage.removeItem('pendingBookingState');
   };
@@ -293,10 +241,7 @@ export default function PublicBooking() {
                 <PaymentStep
                   booking={booking} total={total}
                   paymentUrl={paymentUrl}
-                  paymentOpened={paymentOpened} setPaymentOpened={setPaymentOpened}
                   onBack={() => setStep(3)}
-                  onConfirm={confirmBookingAfterPayment}
-                  submitting={submitting}
                   t={t} lang={lang}
                   formatDate={fmtDate}
                 />

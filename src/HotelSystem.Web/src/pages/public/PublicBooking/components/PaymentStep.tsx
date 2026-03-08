@@ -6,11 +6,7 @@ interface Props {
   booking: BookingState;
   total: number;
   paymentUrl: string;
-  paymentOpened: boolean;
-  setPaymentOpened: (v: boolean) => void;
   onBack: () => void;
-  onConfirm: () => void;
-  submitting: boolean;
   t: TDict;
   lang: Lang;
   formatDate: (d: string) => string;
@@ -88,14 +84,11 @@ export default function PaymentStep({
           href={paymentUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => setPaymentOpened(true)}
           className="w-full text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 text-base shadow-xl transition-all hover:opacity-90 hover:-translate-y-0.5"
           style={{ background: 'linear-gradient(135deg, #009ee3 0%, #0078b4 100%)', boxShadow: '0 6px 25px rgba(0,158,227,0.35)', display: 'flex' }}
         >
           🔒 {lang === 'es' ? 'Ir a pagar ahora' : 'Go to payment now'}
         </a>
-
-
 
         {/* SSL badge */}
         <p className="text-xs text-gray-400 text-center">
