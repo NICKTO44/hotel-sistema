@@ -117,24 +117,6 @@ export default function PaymentStep({
           </button>
         )}
 
-        {/* Simular pago (pruebas) */}
-        <button
-          onClick={onConfirm}
-          disabled={submitting}
-          className="w-full border-2 border-dashed border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-400 font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs hover:text-gray-600 hover:border-gray-300"
-        >
-          {submitting ? (
-            <>
-              <div className="h-3 w-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
-              {lang === 'es' ? 'Confirmando...' : 'Confirming...'}
-            </>
-          ) : (
-            <>
-              <FaCheck className="text-gray-300" />
-              {lang === 'es' ? 'Simular pago (solo pruebas)' : 'Simulate payment (test only)'}
-            </>
-          )}
-        </button>
 
         {/* SSL badge */}
         <p className="text-xs text-gray-400 text-center">
