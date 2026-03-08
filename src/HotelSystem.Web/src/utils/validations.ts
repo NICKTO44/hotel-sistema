@@ -45,6 +45,8 @@ export const roomSchema = z.object({
         .int('El piso debe ser un número entero')
         .min(0, 'El piso no puede ser negativo')
         .max(50, 'El piso no puede exceder 50'),
+
+    imageUrl: z.string().optional(),
 });
 
 // Reservation Validation Schema

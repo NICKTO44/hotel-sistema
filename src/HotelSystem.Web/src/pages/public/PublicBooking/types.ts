@@ -5,6 +5,7 @@ export interface Room {
   roomTypeName: string;
   pricePerNight: number;
   capacity: number;
+  imageUrl?: string;
 }
 
 export interface GuestData {

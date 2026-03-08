@@ -27,22 +27,17 @@ namespace HotelSystem.Application.Features.Rooms.Queries.GetAvailableRooms
 
         public async Task<List<RoomDto>> Handle(GetAvailableRoomsQuery request, CancellationToken cancellationToken)
         {
-            // ── Habitaciones ocupadas = reservas activas con CheckedIn (sin importar fechas)
-            // O reservas que se solapan con el rango solicitado ────────────────
             var occupiedReservations = await _reservationRepository.GetAsync(r =>
                 r.Status != ReservationStatus.Cancelled &&
                 r.Status != ReservationStatus.CheckedOut &&
                 (
-                    // Huésped actualmente hospedado — habitación bloqueada hasta check-out real
                     r.Status == ReservationStatus.CheckedIn
                     ||
-                    // Reservas confirmadas/pendientes que se solapan con el rango solicitado
                     (r.CheckInDate < request.CheckOut && request.CheckIn < r.CheckOutDate)
                 ));
 
             var occupiedRoomIds = occupiedReservations.Select(r => r.RoomId).ToHashSet();
 
-            // Todas las habitaciones activas con su tipo
             var allRooms = await _roomRepository.GetAllAsync("RoomType");
 
             var available = allRooms
@@ -58,6 +53,7 @@ namespace HotelSystem.Application.Features.Rooms.Queries.GetAvailableRooms
                     RoomTypeName  = r.RoomType?.Name ?? string.Empty,
                     PricePerNight = r.RoomType?.BasePrice ?? 0,
                     Capacity      = r.RoomType?.Capacity ?? 0,
+                    ImageUrl      = r.ImageUrl,
                 })
                 .ToList();
 

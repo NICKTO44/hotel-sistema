@@ -196,6 +196,9 @@ namespace HotelSystem.Infrastructure.Migrations
                     b.Property<int>("Floor")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 

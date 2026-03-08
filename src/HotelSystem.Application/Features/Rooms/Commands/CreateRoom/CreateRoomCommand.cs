@@ -12,6 +12,7 @@ namespace HotelSystem.Application.Features.Rooms.Commands.CreateRoom
         public string Number { get; set; } = string.Empty;
         public Guid RoomTypeId { get; set; }
         public int Floor { get; set; }
+        public string? ImageUrl { get; set; }
     }
 
     public class CreateRoomCommandValidator : AbstractValidator<CreateRoomCommand>

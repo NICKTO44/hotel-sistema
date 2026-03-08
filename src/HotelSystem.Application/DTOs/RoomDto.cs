@@ -13,5 +13,6 @@ namespace HotelSystem.Application.DTOs
         public decimal PricePerNight { get; set; }
         public bool IsActive { get; set; }
         public int Capacity { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

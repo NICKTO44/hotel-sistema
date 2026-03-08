@@ -77,6 +77,7 @@ export interface Room {
     floor: number;
     pricePerNight: number;
     isActive: boolean;
+    imageUrl?: string;
 }
 
 export enum RoomStatus {
@@ -97,6 +98,8 @@ export interface UpdateRoomRequest {
     number: string;
     roomTypeId: string;
     floor: number;
+    imageUrl?: string;  
+
 }
 
 export interface Reservation {

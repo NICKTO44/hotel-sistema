@@ -11,5 +11,6 @@ namespace HotelSystem.Domain.Entities
         public RoomStatus Status { get; set; } = RoomStatus.Available;
         public int Floor { get; set; }
         public bool IsActive { get; set; } = true;
+        public string? ImageUrl { get; set; }
     }
 }

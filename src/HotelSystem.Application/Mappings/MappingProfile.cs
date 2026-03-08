@@ -15,6 +15,7 @@ namespace HotelSystem.Application.Mappings
             CreateMap<Room, RoomDto>()
                 .ForMember(dest => dest.RoomTypeName, opt => opt.MapFrom(src => src.RoomType != null ? src.RoomType.Name : string.Empty))
                 .ForMember(dest => dest.PricePerNight, opt => opt.MapFrom(src => src.RoomType != null ? src.RoomType.BasePrice : 0))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl))
                 .ReverseMap();
 
             CreateMap<CreateRoomCommand, Room>();

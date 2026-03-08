@@ -38,14 +38,14 @@ namespace HotelSystem.Application.Features.Rooms.Commands.UpdateRoom
         public async Task<Unit> Handle(UpdateRoomCommand request, CancellationToken cancellationToken)
         {
             var room = await _roomRepository.GetByIdAsync(request.Id);
-            
+
             if (room == null)
                 throw new KeyNotFoundException($"Room with ID {request.Id} not found.");
 
-            // Update properties
             room.Number = request.Number;
             room.RoomTypeId = request.RoomTypeId;
             room.Floor = request.Floor;
+            room.ImageUrl = request.ImageUrl;
 
             await _roomRepository.UpdateAsync(room);
             return Unit.Value;

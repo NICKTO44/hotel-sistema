@@ -8,6 +8,7 @@ interface Room {
   roomTypeName: string;
   pricePerNight: number;
   capacity: number;
+  imageUrl?: string;
 }
 
 interface RoomListProps {
@@ -24,7 +25,6 @@ interface RoomListProps {
   t: any;
 }
 
-// Descripciones y amenidades por tipo de habitación
 const ROOM_TYPE_INFO: Record<string, { description: string; amenities: string[] }> = {
   Standard: {
     description: 'Habitación confortable con todo lo esencial para una estadía perfecta.',
@@ -53,7 +53,6 @@ const AMENITY_ICONS: Record<string, JSX.Element> = {
   'Parking':      <FaParking />,
 };
 
-// Imagen por tipo de habitación (usa las imágenes del proyecto)
 const ROOM_IMAGES: Record<string, string> = {
   Standard: '/images/habitaciones/habitacion1.jpeg',
   Deluxe:   '/images/habitaciones/habitacion3.webp',
@@ -75,7 +74,7 @@ function getRoomInfo(typeName: string) {
     : { description: 'Habitación cómoda y bien equipada para tu estadía.', amenities: ['WiFi', 'TV', 'AC', 'Baño privado'] };
 }
 
-function getRoomImage(typeName: string) {
+function getFallbackImage(typeName: string) {
   const key = Object.keys(ROOM_IMAGES).find(k =>
     typeName.toLowerCase().includes(k.toLowerCase())
   );
@@ -130,7 +129,7 @@ const RoomList = ({
         <div className="space-y-4">
           {rooms.map((room) => {
             const info  = getRoomInfo(room.roomTypeName);
-            const img   = getRoomImage(room.roomTypeName);
+            const img   = room.imageUrl || getFallbackImage(room.roomTypeName);
             const isHov = hoveredId === room.id;
 
             return (
@@ -147,10 +146,9 @@ const RoomList = ({
                   transform: isHov ? 'translateY(-2px)' : 'none',
                 }}
               >
-                <div className="flex flex-col sm:flex-row">
-
+                <div className="flex flex-row">
                   {/* Imagen */}
-                  <div className="relative sm:w-44 h-44 sm:h-auto flex-shrink-0 overflow-hidden">
+                  <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '280px' }}>
                     <img
                       src={img}
                       alt={room.roomTypeName}
@@ -158,7 +156,6 @@ const RoomList = ({
                       style={{ transform: isHov ? 'scale(1.06)' : 'scale(1)' }}
                       onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                     />
-                    {/* Badge habitación */}
                     <div
                       className="absolute top-3 left-3 text-white text-xs font-bold px-2.5 py-1 rounded-lg"
                       style={{ background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(6px)' }}
@@ -168,9 +165,8 @@ const RoomList = ({
                   </div>
 
                   {/* Contenido */}
-                  <div className="flex-1 p-5 flex flex-col justify-between">
+                  <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
                     <div>
-                      {/* Tipo y meta */}
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
                           <h3 className="font-bold text-neutral-900 text-base leading-tight">
@@ -187,8 +183,6 @@ const RoomList = ({
                             </span>
                           </div>
                         </div>
-
-                        {/* Precio */}
                         <div className="text-right flex-shrink-0">
                           <p className="text-xl font-black text-neutral-900 leading-none">
                             {convert(room.pricePerNight)}
@@ -197,12 +191,10 @@ const RoomList = ({
                         </div>
                       </div>
 
-                      {/* Descripción */}
                       <p className="text-xs text-neutral-500 leading-relaxed mb-3">
                         {info.description}
                       </p>
 
-                      {/* Amenidades */}
                       <div className="flex flex-wrap gap-1.5 mb-4">
                         {info.amenities.map(amenity => (
                           <span
@@ -218,7 +210,6 @@ const RoomList = ({
                       </div>
                     </div>
 
-                    {/* Footer: total + botón */}
                     <div className="flex items-center justify-between pt-3 border-t border-neutral-50">
                       <div>
                         <span className="text-xs text-neutral-400">{t.total} </span>
@@ -229,7 +220,6 @@ const RoomList = ({
                           {' '}· {nightCount} {nightCount === 1 ? t.night : t.nights}
                         </span>
                       </div>
-
                       <button
                         onClick={() => onSelect(room)}
                         className="flex items-center gap-2 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all duration-200 hover:gap-3"
