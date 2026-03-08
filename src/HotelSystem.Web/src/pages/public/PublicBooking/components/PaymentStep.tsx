@@ -95,27 +95,6 @@ export default function PaymentStep({
           🔒 {lang === 'es' ? 'Ir a pagar ahora' : 'Go to payment now'}
         </a>
 
-        {/* Botón confirmar después de pagar */}
-        {paymentOpened && (
-          <button
-            onClick={onConfirm}
-            disabled={submitting}
-            className="w-full text-white font-bold py-4 rounded-xl transition-all disabled:opacity-60 flex items-center justify-center gap-2 text-base shadow-lg hover:-translate-y-0.5"
-            style={{ background: 'linear-gradient(135deg, #059669 0%, #047857 100%)', boxShadow: '0 6px 20px rgba(5,150,105,0.4)' }}
-          >
-            {submitting ? (
-              <>
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                {lang === 'es' ? 'Confirmando reserva...' : 'Confirming booking...'}
-              </>
-            ) : (
-              <>
-                <FaCheck />
-                {lang === 'es' ? '✓ Ya pagué — Confirmar reserva' : '✓ I paid — Confirm booking'}
-              </>
-            )}
-          </button>
-        )}
 
 
         {/* SSL badge */}
