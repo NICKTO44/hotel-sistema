@@ -1,4 +1,4 @@
-import { FaArrowLeft, FaCheck } from 'react-icons/fa';
+import { FaArrowLeft } from 'react-icons/fa';
 import { BookingState } from '../types';
 import { TDict, Lang } from '../constants';
 
@@ -17,8 +17,8 @@ interface Props {
 }
 
 export default function PaymentStep({
-  booking, total, paymentUrl, paymentOpened, setPaymentOpened,
-  onBack, onConfirm, submitting, t, lang, formatDate
+  booking, total, paymentUrl,
+  onBack, t, lang, formatDate
 }: Props) {
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
