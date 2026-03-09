@@ -1,4 +1,4 @@
-import { FaBed, FaCalendarAlt, FaArrowRight, FaMoon, FaSearch } from 'react-icons/fa';
+import { FaCalendarAlt, FaArrowRight, FaMoon, FaSearch } from 'react-icons/fa';
 import { Lang, TDict } from '../constants';
 import CurrencySelector from './CurrencySelector';
 import LangSelector from './LangSelector';
@@ -36,15 +36,16 @@ export default function BookingNavbar({
     >
       {/* ── Fila 1: Logo + Moneda + Idioma ── */}
       <div className="px-4 pt-3 pb-2 flex items-center justify-between">
-        {/* Logo */}
-        <button onClick={onLogoClick} className="flex items-center gap-2 group">
-          <div className="h-8 w-8 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:bg-emerald-500 transition-colors flex-shrink-0">
-            <FaBed className="text-white text-xs" />
-          </div>
-          <div>
-            <span className="font-bold text-sm text-white block leading-none">Palacio del Mar</span>
-            <span className="text-emerald-400 text-xs">★ Premium</span>
-          </div>
+        {/* Logo solo texto */}
+        <button onClick={onLogoClick} className="flex flex-col items-start group">
+          <span
+            className="text-white font-bold leading-none tracking-tight"
+            style={{ fontSize: '1.1rem', fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: '-0.02em' }}
+          >
+            Palacio
+            <span style={{ color: '#34d399' }}> del Mar</span>
+          </span>
+          
         </button>
 
         {/* Noches (solo desktop) + Moneda + Idioma */}

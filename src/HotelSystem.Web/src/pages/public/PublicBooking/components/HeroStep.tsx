@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { FaBed, FaCalendarAlt, FaSearch, FaChevronLeft, FaChevronRight, FaShieldAlt, FaCheck } from 'react-icons/fa';
+import { FaCalendarAlt, FaSearch, FaChevronLeft, FaChevronRight, FaShieldAlt, FaCheck } from 'react-icons/fa';
 import { SLIDES, TDict, Lang } from '../constants';
 import LangSelector from './LangSelector';
 
@@ -38,7 +38,6 @@ export default function HeroStep({
   }, []);
 
   return (
-    /* overflow-x-hidden aquí previene scroll horizontal en toda la sección */
     <div className="overflow-x-hidden">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -65,7 +64,6 @@ export default function HeroStep({
         .fade-up-3 { animation: fadeUp 0.8s 0.3s ease both; }
         .fade-up-4 { animation: fadeUp 0.8s 0.45s ease both; }
         .shimmer   { animation: shimmer 2.5s ease-in-out infinite; }
-        .float-icon { animation: float 3s ease-in-out infinite; }
 
         .booking-font { font-family: 'DM Sans', sans-serif; }
         .hero-title   { font-family: 'Playfair Display', serif; }
@@ -96,11 +94,8 @@ export default function HeroStep({
           outline: none;
           box-shadow: 0 0 0 3px rgba(52,211,153,0.15);
         }
-        .glass-label {
-          color: rgba(255,255,255,0.7);
-        }
+        .glass-label { color: rgba(255,255,255,0.7); }
         .glass-input::placeholder { color: rgba(255,255,255,0.4); }
-        /* Fix color picker en inputs date sobre fondo oscuro */
         .glass-input::-webkit-datetime-edit { color: white; }
         .glass-input::-webkit-datetime-edit-fields-wrapper { color: white; }
         .glass-input::-webkit-datetime-edit-text { color: rgba(255,255,255,0.5); }
@@ -130,14 +125,13 @@ export default function HeroStep({
       {/* ── Navbar sobre el hero ── */}
       <header className="absolute top-0 left-0 right-0 z-50 px-4 md:px-10 py-4 flex items-center justify-between booking-font">
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent pointer-events-none" />
-        <div className="relative flex items-center gap-3">
-          <div className="h-9 w-9 bg-emerald-600 rounded-xl flex items-center justify-center shadow-lg float-icon">
-            <FaBed className="text-white text-sm" />
-          </div>
-          <div>
-            <span className="font-bold text-sm tracking-wide text-white drop-shadow block leading-none">Palacio del Mar</span>
-            <span className="text-emerald-300 text-xs tracking-widest uppercase shimmer">★ Premium Stay</span>
-          </div>
+        <div className="relative flex items-center">
+          <span
+            className="font-bold text-white drop-shadow leading-none"
+            style={{ fontSize: '1.15rem', fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: '-0.01em' }}
+          >
+            Palacio<span style={{ color: '#34d399' }}> del Mar</span>
+          </span>
         </div>
         <div className="relative">
           <LangSelector lang={lang} setLang={setLang} />
@@ -176,7 +170,7 @@ export default function HeroStep({
             </span>
           </div>
 
-          {/* Título — más pequeño en móvil */}
+          {/* Título */}
           <h1 className="fade-up-2 hero-title text-4xl sm:text-5xl md:text-7xl font-black text-white mb-4 md:mb-5 leading-tight drop-shadow-2xl max-w-4xl px-2">
             {t.heroTitle}
           </h1>
@@ -184,7 +178,7 @@ export default function HeroStep({
             {t.heroSub}
           </p>
 
-          {/* Search card — apilado en móvil */}
+          {/* Search card */}
           <div className="fade-up-4 glass-card green-glow rounded-2xl p-4 md:p-6 w-full max-w-2xl">
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
 
@@ -227,7 +221,7 @@ export default function HeroStep({
           </div>
         </div>
 
-        {/* Controles slider — ocultos en móvil pequeño */}
+        {/* Controles slider */}
         <button onClick={prev}
           className="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 bg-black/30 hover:bg-black/50 backdrop-blur-sm text-white rounded-full items-center justify-center transition-all hover:scale-110 border border-white/20">
           <FaChevronLeft />

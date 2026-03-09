@@ -146,16 +146,28 @@ const RoomList = ({
                   transform: isHov ? 'translateY(-2px)' : 'none',
                 }}
               >
-                <div className="flex flex-row">
+                {/* Mobile: vertical | Desktop: horizontal */}
+                <div className="flex flex-col sm:flex-row">
+
                   {/* Imagen */}
-                  <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '280px' }}>
-                    <img
-                      src={img}
-                      alt={room.roomTypeName}
-                      className="w-full h-full object-cover transition-transform duration-500"
-                      style={{ transform: isHov ? 'scale(1.06)' : 'scale(1)' }}
-                      onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                    />
+                  <div
+                    className="relative overflow-hidden flex-shrink-0"
+                    style={{ height: '200px' }}
+                  >
+                    <style>{`
+                      @media (min-width: 640px) {
+                        .room-img-wrap { width: 240px !important; height: 100% !important; }
+                      }
+                    `}</style>
+                    <div className="room-img-wrap w-full h-full" style={{ height: '200px' }}>
+                      <img
+                        src={img}
+                        alt={room.roomTypeName}
+                        className="w-full h-full object-cover transition-transform duration-500"
+                        style={{ transform: isHov ? 'scale(1.06)' : 'scale(1)' }}
+                        onError={e => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                      />
+                    </div>
                     <div
                       className="absolute top-3 left-3 text-white text-xs font-bold px-2.5 py-1 rounded-lg"
                       style={{ background: 'rgba(10,10,10,0.75)', backdropFilter: 'blur(6px)' }}
@@ -165,7 +177,7 @@ const RoomList = ({
                   </div>
 
                   {/* Contenido */}
-                  <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
+                  <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
                     <div>
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
@@ -184,22 +196,22 @@ const RoomList = ({
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
-                          <p className="text-xl font-black text-neutral-900 leading-none">
+                          <p className="text-lg font-black text-neutral-900 leading-none">
                             {convert(room.pricePerNight)}
                           </p>
                           <p className="text-xs text-neutral-400 mt-0.5">{t.perNight}</p>
                         </div>
                       </div>
 
-                      <p className="text-xs text-neutral-500 leading-relaxed mb-3">
+                      <p className="text-xs text-neutral-500 leading-relaxed mb-3 hidden sm:block">
                         {info.description}
                       </p>
 
-                      <div className="flex flex-wrap gap-1.5 mb-4">
+                      <div className="flex flex-wrap gap-1.5 mb-3">
                         {info.amenities.map(amenity => (
                           <span
                             key={amenity}
-                            className="flex items-center gap-1 text-xs text-neutral-500 bg-neutral-50 border border-neutral-100 px-2.5 py-1 rounded-lg font-medium"
+                            className="flex items-center gap-1 text-xs text-neutral-500 bg-neutral-50 border border-neutral-100 px-2 py-1 rounded-lg font-medium"
                           >
                             <span className="text-emerald-500 text-xs">
                               {AMENITY_ICONS[amenity] || null}
@@ -222,7 +234,7 @@ const RoomList = ({
                       </div>
                       <button
                         onClick={() => onSelect(room)}
-                        className="flex items-center gap-2 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all duration-200 hover:gap-3"
+                        className="flex items-center gap-2 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-all duration-200"
                         style={{
                           background: isHov
                             ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
@@ -233,7 +245,7 @@ const RoomList = ({
                         }}
                       >
                         {t.select}
-                        <FaArrowRight className="text-xs transition-transform" />
+                        <FaArrowRight className="text-xs" />
                       </button>
                     </div>
                   </div>

@@ -23,14 +23,32 @@ const formatDate = (d: string, lang: Lang) =>
     day: 'numeric', month: 'short', year: 'numeric'
   });
 
+const SESSION_KEY = 'bookingSession';
+
+function saveSession(step: number, booking: BookingState, rooms: Room[], checkIn: string, checkOut: string) {
+  // No guardar step 4 (confirmación) ni step 35 (pago externo)
+  if (step === 4 || step === 35) return;
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify({ step, booking, rooms, checkIn, checkOut }));
+}
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
 export default function PublicBooking() {
-  const [step, setStep]         = useState<number>(1);
-  const [checkIn, setCheckIn]   = useState(today);
-  const [checkOut, setCheckOut] = useState(tomorrow);
-  const [rooms, setRooms]       = useState<Room[]>([]);
+  const saved = loadSession();
+
+  const [step, setStep]         = useState<number>(saved?.step ?? 1);
+  const [checkIn, setCheckIn]   = useState(saved?.checkIn ?? today);
+  const [checkOut, setCheckOut] = useState(saved?.checkOut ?? tomorrow);
+  const [rooms, setRooms]       = useState<Room[]>(saved?.rooms ?? []);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
-  const [booking, setBooking]   = useState<BookingState>({
+  const [booking, setBooking]   = useState<BookingState>(saved?.booking ?? {
     checkIn: today, checkOut: tomorrow, room: null,
     guest: { firstName: '', lastName: '', email: '', phone: '', nationality: '', identificationNumber: '', notes: '' },
   });
@@ -45,6 +63,11 @@ export default function PublicBooking() {
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
 
   const t = T[lang];
+
+  // Guardar sesión cada vez que cambia step, booking, rooms o fechas
+  useEffect(() => {
+    saveSession(step, booking, rooms, checkIn, checkOut);
+  }, [step, booking, rooms, checkIn, checkOut]);
 
   useEffect(() => {
     setRatesLoading(true);
@@ -68,6 +91,7 @@ export default function PublicBooking() {
 
     sessionStorage.removeItem('pendingPreferenceId');
     sessionStorage.removeItem('pendingBookingState');
+    sessionStorage.removeItem(SESSION_KEY);
 
     if (savedBooking) {
       setBooking(JSON.parse(savedBooking));
@@ -125,7 +149,7 @@ export default function PublicBooking() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       setRooms(data);
-      setBooking(prev => ({ ...prev, checkIn, checkOut }));
+      setBooking(prev => ({ ...prev, checkIn, checkOut, room: null }));
       setStep(2);
     } catch (e: any) {
       setError(e.message || t.errorSearch);
@@ -189,6 +213,7 @@ export default function PublicBooking() {
     setPaymentUrl('');
     sessionStorage.removeItem('pendingPreferenceId');
     sessionStorage.removeItem('pendingBookingState');
+    sessionStorage.removeItem(SESSION_KEY);
   };
 
   return (
