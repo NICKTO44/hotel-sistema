@@ -9,6 +9,7 @@ using HotelSystem.Application.DTOs;
 using MediatR;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace HotelSystem.API.Controllers
 {
@@ -59,7 +60,6 @@ namespace HotelSystem.API.Controllers
                 var frontendUrl = _configuration["App:FrontendUrl"]
                     ?? throw new InvalidOperationException("App:FrontendUrl no configurado.");
 
-                // ── DEBUG TEMPORAL: verificar que la URL se lee correctamente ──
                 _logger.LogInformation("FrontendUrl configurada: {Url}", frontendUrl);
                 _logger.LogInformation("BackUrl Success será: {Url}", $"{frontendUrl}/booking?payment=success");
 
@@ -139,7 +139,6 @@ namespace HotelSystem.API.Controllers
             }
         }
 
-
         [HttpPost("confirm-by-preference")]
         [AllowAnonymous]
         public async Task<IActionResult> ConfirmByPreference([FromBody] ConfirmByPreferenceRequest request)
@@ -209,25 +208,41 @@ namespace HotelSystem.API.Controllers
 
         [HttpPost("webhook")]
         [AllowAnonymous]
-        public async Task<IActionResult> Webhook([FromQuery] string? type, [FromQuery] string? data_id)
+        public async Task<IActionResult> Webhook()
         {
-            if (!await ValidateWebhookSignature())
+            // Leer body completo ANTES de cualquier otra operación
+            Request.EnableBuffering();
+            using var reader = new StreamReader(Request.Body, leaveOpen: true);
+            var rawBody = await reader.ReadToEndAsync();
+            Request.Body.Position = 0;
+
+            // MP envía data.id con PUNTO en query params, no guión bajo
+            // Ejemplo URL: /webhook?data.id=123456&type=payment
+            var dataId = Request.Query["data.id"].ToString();
+            var type   = Request.Query["type"].ToString();
+
+            _logger.LogInformation("Webhook recibido. type={Type}, data.id={Id}, body={Body}",
+                type, dataId, rawBody);
+
+            // Validar firma con el data.id correcto (con punto)
+            if (!ValidateWebhookSignature(dataId))
             {
                 _logger.LogWarning("Webhook rechazado: firma inválida. IP: {IP}",
                     HttpContext.Connection.RemoteIpAddress);
-                return Ok();
+                return Ok(); // Siempre 200 para que MP no reintente
             }
 
             try
             {
-                _logger.LogInformation("Webhook MP recibido. type={Type}, id={Id}", type, data_id);
-
-                if (type != "payment" || string.IsNullOrEmpty(data_id))
-                    return Ok();
-
-                if (!long.TryParse(data_id, out var paymentId))
+                if (type != "payment" || string.IsNullOrEmpty(dataId))
                 {
-                    _logger.LogWarning("Webhook: data_id no es un número válido.");
+                    _logger.LogInformation("Webhook ignorado. type={Type}, data.id={Id}", type, dataId);
+                    return Ok();
+                }
+
+                if (!long.TryParse(dataId, out var paymentId))
+                {
+                    _logger.LogWarning("Webhook: data.id no es número válido: {Id}", dataId);
                     return Ok();
                 }
 
@@ -239,7 +254,10 @@ namespace HotelSystem.API.Controllers
                 _logger.LogInformation("Pago MP status: {Status}, id: {Id}", payment.Status, paymentId);
 
                 if (payment.Status != "approved")
+                {
+                    _logger.LogInformation("Pago no aprobado. Status: {Status}", payment.Status);
                     return Ok();
+                }
 
                 var meta = payment.Metadata;
                 if (meta == null)
@@ -262,16 +280,22 @@ namespace HotelSystem.API.Controllers
                 var nationality = GetMeta("guest_nationality");
                 var notes       = GetMeta("notes");
 
+                _logger.LogInformation(
+                    "Webhook metadata — room_id={RoomId}, checkIn={CheckIn}, checkOut={CheckOut}, email={Email}",
+                    roomIdStr, checkInStr, checkOutStr, email);
+
                 if (!Guid.TryParse(roomIdStr, out var roomId))
                 {
-                    _logger.LogError("Webhook: room_id inválido en metadata. PaymentId: {Id}", paymentId);
+                    _logger.LogError("Webhook: room_id inválido. PaymentId={Id}, room_id={RoomId}",
+                        paymentId, roomIdStr);
                     return Ok();
                 }
 
                 if (!DateTime.TryParse(checkInStr, out var checkIn) ||
                     !DateTime.TryParse(checkOutStr, out var checkOut))
                 {
-                    _logger.LogError("Webhook: fechas inválidas en metadata. PaymentId: {Id}", paymentId);
+                    _logger.LogError("Webhook: fechas inválidas. checkIn={CI}, checkOut={CO}",
+                        checkInStr, checkOutStr);
                     return Ok();
                 }
 
@@ -295,25 +319,26 @@ namespace HotelSystem.API.Controllers
                 };
 
                 await _mediator.Send(command);
-                _logger.LogInformation("Reserva creada desde webhook. RoomId: {RoomId}", roomId);
+                _logger.LogInformation("✅ Reserva creada desde webhook. RoomId={RoomId}, PaymentId={PaymentId}",
+                    roomId, paymentId);
 
                 return Ok();
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error en webhook. Tipo: {Type}", ex.GetType().Name);
+                _logger.LogError("Error en webhook. Tipo={Type}, Mensaje={Message}, Inner={Inner}",
+                    ex.GetType().Name, ex.Message, ex.InnerException?.Message ?? "ninguno");
                 return Ok();
             }
         }
 
-        private async Task<bool> ValidateWebhookSignature()
+        private bool ValidateWebhookSignature(string dataId)
         {
             var webhookSecret = _configuration["MercadoPago:WebhookSecret"];
 
             if (string.IsNullOrWhiteSpace(webhookSecret))
             {
-                _logger.LogWarning("MercadoPago:WebhookSecret no configurado. " +
-                    "Validación de firma omitida. NO usar en producción.");
+                _logger.LogWarning("WebhookSecret no configurado — validación omitida.");
                 return true;
             }
 
@@ -326,6 +351,7 @@ namespace HotelSystem.API.Controllers
                 return false;
             }
 
+            // Extraer ts y v1 del header x-signature
             string? ts = null;
             string? v1 = null;
             foreach (var part in xSignature.Split(","))
@@ -333,40 +359,51 @@ namespace HotelSystem.API.Controllers
                 var kv = part.Trim().Split("=", 2);
                 if (kv.Length == 2)
                 {
-                    if (kv[0] == "ts") ts = kv[1];
-                    if (kv[0] == "v1") v1 = kv[1];
+                    if (kv[0].Trim() == "ts") ts = kv[1].Trim();
+                    if (kv[0].Trim() == "v1") v1 = kv[1].Trim();
                 }
             }
 
             if (string.IsNullOrEmpty(ts) || string.IsNullOrEmpty(v1))
             {
-                _logger.LogWarning("Webhook: formato de x-signature inválido.");
+                _logger.LogWarning("Webhook: formato x-signature inválido: {Sig}", xSignature);
                 return false;
             }
 
-            var dataId   = Request.Query["data_id"].ToString();
-            var manifest = $"id:{dataId};request-id:{xRequestId};ts:{ts};";
+            // Construir manifest según doc oficial MP:
+            // - Si x-request-id está vacío, omitirlo del manifest
+            // Formato: id:{data.id};request-id:{x-request-id};ts:{ts};
+            string manifest;
+            if (string.IsNullOrEmpty(xRequestId))
+                manifest = $"id:{dataId};ts:{ts};";
+            else
+                manifest = $"id:{dataId};request-id:{xRequestId};ts:{ts};";
 
-            using var hmac        = new HMACSHA256(Encoding.UTF8.GetBytes(webhookSecret));
-            var hash              = hmac.ComputeHash(Encoding.UTF8.GetBytes(manifest));
+            _logger.LogInformation("Webhook manifest: {Manifest}", manifest);
+
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(webhookSecret));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(manifest));
             var expectedSignature = BitConverter.ToString(hash).Replace("-", "").ToLower();
-            var isValid           = string.Equals(expectedSignature, v1, StringComparison.OrdinalIgnoreCase);
+
+            var isValid = string.Equals(expectedSignature, v1, StringComparison.OrdinalIgnoreCase);
 
             if (!isValid)
-                _logger.LogWarning("Webhook: firma no coincide. Posible petición falsificada.");
+                _logger.LogWarning(
+                    "Webhook firma NO coincide. Expected={Expected}, Got={Got}, Manifest={Manifest}",
+                    expectedSignature, v1, manifest);
+            else
+                _logger.LogInformation("Webhook firma válida ✅");
 
             return isValid;
         }
     }
 
     public class ConfirmByPreferenceRequest
-{
-    public string PreferenceId { get; set; } = "";
-}
+    {
+        public string PreferenceId { get; set; } = "";
+    }
 
-
-
-public class CreatePreferenceRequest
+    public class CreatePreferenceRequest
     {
         public string  RoomId           { get; set; } = "";
         public string  RoomNumber       { get; set; } = "";
